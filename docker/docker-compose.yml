@@ -6,3 +6,9 @@ services:
       - "5000:5000"
     environment:
       - FLASK_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]   # HTTP 200 = OK
+      interval: 10s        # co 10 s
+      timeout: 5s
+      retries: 5           # ≈ 50 s na rozruch
+      start_period: 5s
