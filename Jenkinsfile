@@ -60,14 +60,29 @@ pipeline {
         stage('Health Check') {
             when { branch 'main' }
             steps {
-                retry(6) {
-                    sleep 10
-                    sh '''
-                    echo ">>> Checking http://localhost:5000/ ..."
-                    curl --fail --silent http://localhost:5000/ > /dev/null
-                    '''
+                script {
+                    // czekamy maks. 90 s aż Docker oznaczy kontener jako healthy
+                    def limit = 90
+                    def ok = sh(
+                        script: """
+                        for i in \$(seq 1 ${limit}); do
+                            status=\$(docker inspect -f '{{.State.Health.Status}}' flask-app 2>/dev/null || echo starting)
+                            [ "\$status" = "healthy" ] && exit 0
+                            sleep 1
+                        done
+                        exit 1
+                        """,
+                        returnStatus: true
+                    ) == 0
+
+                    if (!ok) {
+                        echo '❌  Kontener nie osiągnął stanu healthy — ostatnie logi:'
+                        sh 'docker logs --tail=50 flask-app || true'
+                        error 'Health-check failed'
+                    } else {
+                        echo '✅  Kontener healthy — aplikacja działa'
+                    }
                 }
-                echo '✅  Flask works on port 5000'
             }
         }
     }
