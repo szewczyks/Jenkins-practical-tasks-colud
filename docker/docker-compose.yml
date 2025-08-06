@@ -6,9 +6,9 @@ services:
       - "5000:5000"
     environment:
       - FLASK_ENV=production
-    healthcheck:                       # ⬅⬅⬅ NOWE
-      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 10s
       timeout: 5s
-      retries: 6                       # ≈ 1 min na rozgrzanie
+      retries: 6
       start_period: 5s
