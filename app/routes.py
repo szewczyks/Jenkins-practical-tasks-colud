@@ -15,4 +15,3 @@ def register_routes(app):
         random_value = np.random.randint(1, 100)
         return jsonify({"random_number": int(random_value)})
     
-    
