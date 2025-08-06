@@ -10,4 +10,4 @@ COPY . .
 # CMD ["gunicorn", "--bind", "0.0.0.0:5000", "wsgi:app"]
 
 # — albo — bez wsgi.py:
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--factory", "app:create_app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:create_app"]

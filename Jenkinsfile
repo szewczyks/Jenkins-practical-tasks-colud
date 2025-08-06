@@ -62,7 +62,7 @@ pipeline {
             steps {
                 script {
                     // czekamy maks. 90 s aż Docker oznaczy kontener jako healthy
-                    def limit = 90
+                    def limit = 60
                     def ok = sh(
                         script: """
                         for i in \$(seq 1 ${limit}); do
