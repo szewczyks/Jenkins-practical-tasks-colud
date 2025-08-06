@@ -1,72 +1,66 @@
-// pipeline {
-//     agent any
+pipeline {
+    agent any
 
-//     options {
-//         skipDefaultCheckout(true)       // blocks default Source Control Management checkout
-//         timestamps()                    // add timestamps to console output
-//         ansiColor('xterm')              // colorize console output
-//     }
+    options {
+        skipDefaultCheckout(true)
+        timestamps()
+        ansiColor('xterm')
+    }
 
-//     environment {
-//         DOCKER_IMAGE = 'flask-ci-cd'
-//     }
+    environment {
+        DOCKER_IMAGE = 'flask-ci-cd'
+        TAG          = "${env.BRANCH_NAME == 'main' ? 'latest' : env.BRANCH_NAME}"
+        CONTAINER    = 'flask-app'
+        APP_PORT     = '5000'
+    }
 
-//     stages {
+    stages {
 
-//         stage('Source Code Checkout') {
-//             steps {
-//                 cleanWs()               // clean workspace before checkout
-//                 checkout scm
-//                 stash name: 'workspace-src', includes: '**/*'
-//             }
-//         }
+        stage('Checkout') {
+            steps {
+                cleanWs()
+                checkout scm
+            }
+        }
 
-//         stage('Run Tests') {
-//             agent {
-//                 docker {
-//                     image 'python:3.11'
-//                     args  '-u root:root'
-//                     reuseNode true      // use the same workspace
-//                 }
-//             }
-//             steps {
-//                 unstash 'workspace-src'
-//                 sh '''
-//                     python -m venv venv
-//                     ./venv/bin/pip install --upgrade pip
-//                     ./venv/bin/pip install -r requirements.txt pytest
-//                     ./venv/bin/pytest -q
-//                 '''
-//             }
-//         }
+        stage('Tests') {
+            agent {
+                docker {
+                    image 'python:3.11'
+                    args  '-u root:root'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                  python -m venv venv
+                  ./venv/bin/pip install -U pip
+                  ./venv/bin/pip install -r requirements.txt pytest
+                  ./venv/bin/pytest -q
+                '''
+            }
+        }
 
-//         stage('Build Docker Image') {
-//             steps {
-//                 // unstash 'workspace-src'
-//                 script {
-//                     env.TAG = (env.BRANCH_NAME == 'main') ? 'latest' : env.BRANCH_NAME
-//                     sh "docker build -t ${DOCKER_IMAGE}:${TAG} -f docker/Dockerfile ."
-//                 }
-//             }
-//         }
+        stage('Build Image') {
+            steps {
+                sh "docker build -t ${DOCKER_IMAGE}:${TAG} -f docker/Dockerfile ."
+            }
+        }
 
-//         stage('Deploy (Local)') {
-//             when { branch 'main' }
-//             steps {
-//                 sh '''
-//                     cd docker
-//                     docker-compose down || true
-//                     docker-compose up -d --build
-//                 '''
-//             }
-//         }
-//     }
+        stage('Deploy on EC2') {
+            when { branch 'main' }
+            steps {
+                sh """
+                  # zatrzymaj poprzedni kontener (jeśli jest)
+                  docker rm -f ${CONTAINER} 2>/dev/null || true
 
-//     post {
-//         always {
-//             cleanWs()
-//         }
-//     }
-// }
+                  # użyj compose, żeby zachować mapowanie portów i zmienne
+                  docker compose -f docker/docker-compose.yml \
+                    up -d --no-deps --force-recreate
+                """
+            }
+        }
+    }
 
-
+    post { always { cleanWs() } }
+}
