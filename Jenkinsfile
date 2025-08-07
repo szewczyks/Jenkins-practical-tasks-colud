@@ -45,7 +45,17 @@ pipeline {
             steps {
                 sh "docker build -t ${DOCKER_IMAGE}:${TAG} -f docker/Dockerfile ."
             }
+            post {
+                success {
+                    script {
+                        if (env.BRANCH_NAME != 'main') {
+                            sh "docker image rm -f ${DOCKER_IMAGE}:${TAG} || true"
+                        }
+                    }
+                }
+            }
         }
+
 
         stage('Deploy on EC2') {
             when { branch 'main' }
