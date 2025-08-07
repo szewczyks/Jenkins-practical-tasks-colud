@@ -86,11 +86,11 @@ pipeline {
                     ) == 0
 
                     if (!ok) {
-                        echo '❌  Kontener nie osiągnął stanu healthy — ostatnie logi:'
+                        echo 'Kontener nie osiągnął stanu healthy — ostatnie logi:'
                         sh 'docker logs --tail=50 flask-app || true'
                         error 'Health-check failed'
                     } else {
-                        echo '✅  Kontener healthy — aplikacja działa'
+                        echo 'Kontener healthy — aplikacja działa'
                     }
                 }
             }
