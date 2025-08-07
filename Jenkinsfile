@@ -56,7 +56,6 @@ pipeline {
             }
         }
 
-
         stage('Deploy on EC2') {
             when { branch 'main' }
             steps {
@@ -72,10 +71,10 @@ pipeline {
             steps {
                 script {
                     // czekamy maks. 90 s aż Docker oznaczy kontener jako healthy
-                    def limit = 60
+                    def limit = 120
                     def ok = sh(
                         script: """
-                        for i in \$(seq 1 ${limit}); do
+                        for i in \$(seq 5 ${limit}); do
                             status=\$(docker inspect -f '{{.State.Health.Status}}' flask-app 2>/dev/null || echo starting)
                             [ "\$status" = "healthy" ] && exit 0
                             sleep 1
