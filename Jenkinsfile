@@ -56,7 +56,6 @@ pipeline {
             }
         }
 
-
         stage('Deploy on EC2') {
             when { branch 'main' }
             steps {
@@ -71,28 +70,33 @@ pipeline {
             when { branch 'main' }
             steps {
                 script {
-                    // czekamy maks. 90 s aż Docker oznaczy kontener jako healthy
-                    def limit = 60
-                    def ok = sh(
-                        script: """
-                        for i in \$(seq 1 ${limit}); do
-                            status=\$(docker inspect -f '{{.State.Health.Status}}' flask-app 2>/dev/null || echo starting)
-                            [ "\$status" = "healthy" ] && exit 0
-                            sleep 1
-                        done
-                        exit 1
-                        """,
-                        returnStatus: true
-                    ) == 0
+                    int attempts   = 2          // 0 s i 10 s  → łącznie ≤ 12 s
+                    int sleepSec   = 10
+                    boolean ok     = false
+
+                    for (int i = 1; i <= attempts; i++) {
+                        def status = sh(
+                            script: "docker inspect -f '{{.State.Health.Status}}' flask-app 2>/dev/null || echo starting",
+                            returnStdout: true
+                        ).trim()
+
+                        if (status == 'healthy') {
+                            ok = true
+                            break
+                        }
+
+                        if (i < attempts) { sleep sleepSec }
+                    }
 
                     if (!ok) {
-                        echo 'Kontener nie osiągnął stanu healthy — ostatnie logi:'
-                        sh 'docker logs --tail=50 flask-app || true'
+                        echo '❌  Kontener nie osiągnął stanu healthy — ostatnie logi:'
+                        sh  'docker logs --tail=50 flask-app || true'
                         error 'Health-check failed'
                     } else {
-                        echo 'Kontener healthy — aplikacja działa'
+                        echo '✅  Kontener healthy — aplikacja działa'
                     }
                 }
+
             }
         }
     }
