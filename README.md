@@ -1,32 +1,52 @@
 # Flask CI/CD Demo
 
-Minimal Flask API + pytest suite + Docker + Jenkins.  
-Intended as a **self-contained playground** that shows:
+A minimal Flask API with tests, Docker packaging, and Jenkins CI/CD pipeline. 
+This project serves as a **self-contained playground** to demonstrate:
 
 * how to package a Python service into a Docker image  
 * how to run it locally with `docker-compose`  
 * how to build / test / deploy the image from a Jenkins pipeline
 
-## 1 Running locally
+## 1 Running the App in Docker
 
 > **Prerequisite:** Docker (Compose v1 or v2).
-
+From the root directory of the project:
 ```bash
-cd docker
-docker-compose up -d
-```
+# Build the Docker image
+docker build -t flask-ci-cd:latest -f docker/Dockerfile .
 
-Flask API: [http://localhost:5000](http://localhost:5000)
- - `/` → `{"message":"Hello from Flask"}`
- - `/health` → `{"status":"healthy"}`
- - `/random` → `{"random_number": <1-99>}`
+# Start the container with Compose
+docker compose -f docker/docker-compose.yml up --build -d
+```
+#### Verifying the App is Running
+You can use the following methods to verify that the app is up and healthy:
+1. Check container health status:
+    ```bash
+    docker inspect -f '{{.State.Health.Status}}' flask-app
+    # Output should be: healthy
+    ```
+2. Test API endpoints with curl:
+    ```bash
+    curl http://localhost:5000/
+    # → {"message":"Hello from Flask"}
+
+    curl http://localhost:5000/health
+    # → {"status":"healthy"}
+
+    curl http://localhost:5000/random
+    # → {"random_number": 42}
+    ```
+Or open in browser:
+- http://localhost:5000
+- http://localhost:5000/health
+- http://localhost:5000/random
 
 Stop & remove:
 ```bash
-docker-compose down
+docker compose -f docker/docker-compose.yml down
 ```
 
-## 2 Running the tests
+## 2 Running the tests locally
 ```bash
 python -m venv venv
 source venv/bin/activate

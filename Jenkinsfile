@@ -70,7 +70,7 @@ pipeline {
             when { branch 'main' }
             steps {
                 script {
-                    int attempts   = 2          // 0 s i 10 s  → łącznie ≤ 12 s
+                    int attempts   = 2
                     int sleepSec   = 10
                     boolean ok     = false
 
@@ -89,11 +89,11 @@ pipeline {
                     }
 
                     if (!ok) {
-                        echo '❌  Kontener nie osiągnął stanu healthy — ostatnie logi:'
+                        echo 'The container did not reach a healthy state — latest logs:'
                         sh  'docker logs --tail=50 flask-app || true'
                         error 'Health-check failed'
                     } else {
-                        echo '✅  Kontener healthy — aplikacja działa'
+                        echo 'Container healthy — Application is running!'
                     }
                 }
 
